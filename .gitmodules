@@ -1,0 +1,3 @@
+[submodule "helios-python-sdk"]
+	path = helios-python-sdk
+	url = git@github.com:helios-data/helios-python-sdk.git
