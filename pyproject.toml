@@ -4,4 +4,16 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = []
+dependencies = [
+    "betterproto2>=0.10.0",
+    "betterproto2-compiler>=0.10.1",
+    "boto3>=1.43.36",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.20",
+]
+
+[tool.uv.sources]
+helios-python-sdk = { path = "helios-python-sdk", editable = true }
