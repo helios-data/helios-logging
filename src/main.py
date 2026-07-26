@@ -8,6 +8,7 @@ from helios.generated.helios.transport import AprsPacket
 from aggregator import Aggregator
 from generated import TelemetryPacket
 from formatter import format_aprs_packet, format_telemetry_packet
+from s3_store import make_s3_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -59,8 +60,24 @@ async def main() -> None:
         logger.error(f"Fatal error in dashboard task: {e}", exc_info=True)
         sys.exit(1)
 
-    telemetry_aggregator = Aggregator()
-    aprs_aggregator = Aggregator()
+    telemetry_store = make_s3_store(
+        type_name="telemetry",
+        bucket=os.environ.get("S3_BUCKET"),
+        key_prefix=os.environ.get("S3_KEY_PREFIX", ""),
+        region=os.environ.get("AWS_REGION"),
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL"),
+    )
+
+    aprs_store = make_s3_store(
+        type_name="aprs",
+        bucket=os.environ.get("S3_BUCKET"),
+        key_prefix=os.environ.get("S3_KEY_PREFIX", ""),
+        region=os.environ.get("AWS_REGION"),
+        endpoint_url=os.environ.get("S3_ENDPOINT_URL"),
+    )
+
+    telemetry_aggregator = Aggregator(store_func=telemetry_store)
+    aprs_aggregator = Aggregator(store_func=aprs_store)
 
     async with helios_client.subscribe_event(address="Helios.FALCON.Telemetry", event_name="telemetry") as telemetry_events:
         async with helios_client.subscribe_event(address="Helios.Services.TeleGPS", event_name="aprs") as aprs_events:

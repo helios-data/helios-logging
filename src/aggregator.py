@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 class Aggregator:
     def __init__(
         self,
+        store_func: Callable[[List[dict]], None],
         store_interval_ms: int = DEFAULT_STORE_INTERVAL_MS,
         store_interval_max_size: int = DEFAULT_STORE_INTERVAL_MAX_SIZE,
-        store_func: Optional[Callable[[List[dict]], None]] = None,
     ):
         """Thread-safe aggregator that flushes when either the buffer reaches
         `store_interval_max_size` or every `store_interval_ms` milliseconds.
