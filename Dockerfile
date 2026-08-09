@@ -12,6 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libprotobuf-dev \
     && rm -rf /var/lib/apt/lists/*  
 
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock* ./
 
 # Copy SDK and build it
@@ -32,6 +39,8 @@ RUN uv sync --frozen
 
 COPY entrypoint.sh /entrypoint.sh
 RUN sed -i 's/\r//' /entrypoint.sh && chmod +x /entrypoint.sh
+
+ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 5050
 

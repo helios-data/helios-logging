@@ -35,7 +35,7 @@ async def process_telemetry(events, aggregator: Aggregator) -> None:
 
 #         try:
 #             aprs = AprsPacket().parse(event.data)
-            
+
 #             if aprs.position is None:
 #                 logger.warning("No position in APRS packet from %s", aprs.source)
 #                 continue
@@ -50,14 +50,14 @@ async def main() -> None:
     helios_client = HeliosClient(
         core_address="Helios",
         core_port=5000,
-        node_uri="Helios.FALCON.Dashboard",
+        node_uri="Helios.FALCON.Logging",
     )
 
     try:
         await helios_client.connect()
         logger.info("Connected to Helios core")
     except Exception as e:
-        logger.error(f"Fatal error in dashboard task: {e}", exc_info=True)
+        logger.error(f"Fatal error in logging task: {e}", exc_info=True)
         sys.exit(1)
 
     telemetry_store = make_s3_store(
