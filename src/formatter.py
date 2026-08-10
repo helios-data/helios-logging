@@ -63,8 +63,8 @@ def format_aprs_packet(data: AprsPacket) -> dict:
     formatted_packet = {
         "time": datetime.now(timezone.utc).timestamp(),
         "callsign": data.source,
-        "gps_latitude": pos.latitude,
-        "gps_longitude": pos.longitude
+        "gps_latitude": pos.latitude if pos else None,
+        "gps_longitude": pos.longitude if pos else None
     }
 
     return formatted_packet
