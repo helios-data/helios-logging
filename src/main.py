@@ -62,22 +62,22 @@ async def main() -> None:
 
     telemetry_store = make_s3_store(
         type_name="telemetry",
-        bucket=os.environ.get("S3_BUCKET"),
+        bucket=os.environ.get("S3_BUCKET", "helios-logging"),
         key_prefix=os.environ.get("S3_KEY_PREFIX", ""),
-        region=os.environ.get("AWS_REGION"),
+        region=os.environ.get("AWS_REGION", "us-east-1"),
         endpoint_url=os.environ.get("S3_ENDPOINT_URL"),
     )
 
-    aprs_store = make_s3_store(
-        type_name="aprs",
-        bucket=os.environ.get("S3_BUCKET"),
-        key_prefix=os.environ.get("S3_KEY_PREFIX", ""),
-        region=os.environ.get("AWS_REGION"),
-        endpoint_url=os.environ.get("S3_ENDPOINT_URL"),
-    )
+    # aprs_store = make_s3_store(
+    #     type_name="aprs",
+    #     bucket=os.environ.get("S3_BUCKET", "helios-logging"),
+    #     key_prefix=os.environ.get("S3_KEY_PREFIX", ""),
+    #     region=os.environ.get("AWS_REGION", "us-east-1"),
+    #     endpoint_url=os.environ.get("S3_ENDPOINT_URL"),
+    # )
 
     telemetry_aggregator = Aggregator(store_func=telemetry_store)
-    aprs_aggregator = Aggregator(store_func=aprs_store)
+    # aprs_aggregator = Aggregator(store_func=aprs_store)
 
     async with helios_client.subscribe_event(address="Helios.FALCON.Telemetry", event_name="telemetry") as telemetry_events:
         async with helios_client.subscribe_event(address="Helios.Services.TeleGPS", event_name="aprs") as aprs_events:
