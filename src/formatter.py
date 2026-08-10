@@ -61,7 +61,7 @@ def format_telemetry_packet(data: TelemetryPacket) -> dict:
 def format_aprs_packet(data: AprsPacket) -> dict:
     pos = data.position
     formatted_packet = {
-        "time": datetime.now(timezone.utc),
+        "time": datetime.now(timezone.utc).timestamp(),
         "callsign": data.source,
         "gps_latitude": pos.latitude,
         "gps_longitude": pos.longitude
