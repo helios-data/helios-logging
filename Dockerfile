@@ -28,6 +28,15 @@ RUN mkdir -p src/generated && \
     --python_betterproto2_out=src/generated \
     $(find falcon-protos -name "*.proto")
 
+# =========================================
+# TEMP STEP: GENERATE TEMP PROTOS
+RUN mkdir -p src/generated-temp && \
+    uv run protoc \
+    -I=temp-protos \
+    --python_betterproto2_out=src/generated_temp \
+    $(find temp-protos -name "*.proto")
+# =========================================
+
 RUN uv sync --frozen
 
 ENV PATH="/app/.venv/bin:$PATH"
