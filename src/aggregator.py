@@ -1,3 +1,4 @@
+import os
 import threading
 import logging
 from typing import Callable, List, Optional
@@ -6,6 +7,8 @@ DEFAULT_STORE_INTERVAL_MS = 1000
 DEFAULT_STORE_INTERVAL_MAX_SIZE = 1000
 
 logger = logging.getLogger(__name__)
+
+VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 class Aggregator:
     def __init__(
@@ -85,12 +88,14 @@ class Aggregator:
         """
         with self._lock:
             if not self._buffer:
+                if VERBOSE: logger.info("[Flush] Buffer is empty; skipping store.")
                 return
             batch = list(self._buffer)
             self._buffer.clear()
 
         try:
             self._store_func(batch)
+            if VERBOSE: logger.info(f"[Flush] Stored batch of {len(batch)} items.")
         except Exception as e:
             logger.exception("Error storing batch of telemetry data:", e)
             pass
