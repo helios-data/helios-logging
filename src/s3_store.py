@@ -25,6 +25,8 @@ import boto3
 
 logger = logging.getLogger(__name__)
 
+VERBOSE: bool = os.getenv("VERBOSE", "") != ""
+
 def make_s3_store(
     type_name: str,
     bucket: Optional[str] = None,
@@ -74,7 +76,7 @@ def make_s3_store(
 
         try:
             s3_client.put_object(Bucket=bucket, Key=key, Body=body.encode("utf-8"), ContentType="application/x-ndjson")
-            logger.debug("Wrote %d records to s3://%s/%s", len(batch), bucket, key)
+            if VERBOSE: logger.info("Wrote %d records to s3://%s/%s", len(batch), bucket, key)
         except Exception as e:  # pragma: no cover - defensive
             logger.exception("Unexpected error writing to S3: %s", e)
 
