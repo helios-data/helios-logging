@@ -14,7 +14,7 @@ def flight_state_name(state: FlightState) -> str:
 
 def format_telemetry_packet(data: TelemetryPacket) -> dict:
     formatted_packet = {
-        "time": datetime.now(timezone.utc),
+        "time": datetime.now(timezone.utc).timestamp(),
         "flight_state": data.state,
         # Packet metadata
         "counter": data.counter,
