@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from src.generated import FlightState, TelemetryPacket
+from helios.generated.helios.transport import AprsPacket
 
 def flight_state_name(state: FlightState) -> str:
     state_names = {
@@ -57,13 +58,13 @@ def format_telemetry_packet(data: TelemetryPacket) -> dict:
 
     return formatted_packet
 
-# def format_aprs_packet(data: AprsPacket) -> dict:
-#     pos = data.position
-#     formatted_packet = {
-#         "time": datetime.now(timezone.utc),
-#         "callsign": data.source,
-#         "gps_latitude": pos.latitude,
-#         "gps_longitude": pos.longitude
-#     }
+def format_aprs_packet(data: AprsPacket) -> dict:
+    pos = data.position
+    formatted_packet = {
+        "time": datetime.now(timezone.utc),
+        "callsign": data.source,
+        "gps_latitude": pos.latitude,
+        "gps_longitude": pos.longitude
+    }
 
-#     return formatted_packet
+    return formatted_packet
