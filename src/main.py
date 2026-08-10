@@ -3,10 +3,11 @@ import logging
 import os
 import sys
 
+from contextlib import AsyncExitStack
 from helios import HeliosClient
 from src.aggregator import Aggregator
 from src.s3_store import make_s3_store
-from src.processor import process_telemetry, process_aprs
+from src.processor import process_telemetry, process_aprs, process_nmea, process_landing_prediction
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,24 +37,38 @@ async def main() -> None:
 
     telemetry_store = make_s3_store(type_name="telemetry", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
     aprs_store = make_s3_store(type_name="aprs", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    nmea_store = make_s3_store(type_name="nmea", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    landing_prediction_store = make_s3_store(type_name="landing_prediction", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
 
     telemetry_aggregator = Aggregator(store_func=telemetry_store)
     aprs_aggregator = Aggregator(store_func=aprs_store)
+    nmea_aggregator = Aggregator(store_func=nmea_store)
+    landing_prediction_aggregator = Aggregator(store_func=landing_prediction_store)
 
     if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 
     telemetry_aggregator.start()
     aprs_aggregator.start()
+    nmea_aggregator.start()
+    landing_prediction_aggregator.start()
 
-    async with helios_client.subscribe_event(address="*", event_name="telemetry") as telemetry_events:
-        async with helios_client.subscribe_event(address="*", event_name="aprs") as aprs_events:
-            await asyncio.gather(
-                process_telemetry(telemetry_events, telemetry_aggregator),
-                process_aprs(aprs_events, aprs_aggregator),
-            )
+    async with AsyncExitStack() as stack:
+        telemetry_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="telemetry"))
+        aprs_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="aprs"))
+        nmea_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="ground_position"))
+        landing_prediction_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="landing_prediction"))
+
+        await asyncio.gather(
+            process_telemetry(telemetry_events, telemetry_aggregator),
+            process_aprs(aprs_events, aprs_aggregator),
+            process_nmea(nmea_events, nmea_aggregator),
+            process_landing_prediction(landing_prediction_events, landing_prediction_aggregator),
+        )   
 
     telemetry_aggregator.stop()
     aprs_aggregator.stop()
+    nmea_aggregator.stop()
+    landing_prediction_aggregator.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())
