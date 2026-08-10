@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 from src.generated import FlightState, TelemetryPacket
-from helios.generated.helios.transport import AprsPacket
+from helios.generated.helios.transport import AprsPacket, AprsPosition
 
 # Temp protos
 from src.generated_temp.helios.transport import NmeaPosition, NmeaSentence
@@ -63,12 +63,10 @@ def format_telemetry_packet(data: TelemetryPacket) -> dict:
     return formatted_packet
 
 def format_aprs_packet(data: AprsPacket) -> dict:
-    pos = data.position
     formatted_packet = {
         "time": datetime.now(timezone.utc).timestamp(),
         "callsign": data.source,
-        "gps_latitude": pos.latitude if pos else None,
-        "gps_longitude": pos.longitude if pos else None,
+        "position": _format_aprs_position(data.position) if data.position else None,
     }
 
     return formatted_packet
@@ -112,6 +110,16 @@ def _format_landing_point(point: LandingPoint) -> dict:
     return {
         "lat": point.lat,
         "lon": point.lon,
+    }
+
+def _format_aprs_position(pos: AprsPosition) -> dict:
+    return {
+        "latitude": pos.latitude,
+        "longitude": pos.longitude,
+        "altitude_ft": pos.altitude_ft,
+        "course_deg": pos.course_deg,
+        "speed_knots": pos.speed_knots,
+        "comment": pos.comment,
     }
 
 def _format_nmea_position(pos: NmeaPosition) -> dict:
