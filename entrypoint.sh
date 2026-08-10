@@ -1,3 +1,3 @@
 #!/bin/bash
 
-/app/.venv/bin/python /app/src/main.py
+exec uv run python -m src.main
