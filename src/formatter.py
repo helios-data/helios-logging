@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from generated import FlightState, TelemetryPacket
+from src.generated import FlightState, TelemetryPacket
 
 def flight_state_name(state: FlightState) -> str:
     state_names = {

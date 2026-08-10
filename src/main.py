@@ -5,10 +5,10 @@ import sys
 
 from helios import HeliosClient
 # from helios.generated.helios.transport import AprsPacket
-from aggregator import Aggregator
-from generated import TelemetryPacket
-from formatter import format_telemetry_packet
-from s3_store import make_s3_store
+from src.aggregator import Aggregator
+from src.generated import TelemetryPacket
+from src.formatter import format_telemetry_packet
+from src.s3_store import make_s3_store
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
