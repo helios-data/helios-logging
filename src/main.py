@@ -47,6 +47,8 @@ async def process_telemetry(events, aggregator: Aggregator) -> None:
 #             logger.error("Error processing APRS event: %s", e, exc_info=True)
 
 async def main() -> None:
+    if VERBOSE: logger.info("Starting logging task with verbose output.")
+
     helios_client = HeliosClient(
         core_address="Helios",
         core_port=5000,
@@ -78,6 +80,8 @@ async def main() -> None:
 
     telemetry_aggregator = Aggregator(store_func=telemetry_store)
     # aprs_aggregator = Aggregator(store_func=aprs_store)
+
+    if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 
     async with helios_client.subscribe_event(address="Helios.FALCON.SRAD_Telemetry", event_name="telemetry") as telemetry_events:
         # async with helios_client.subscribe_event(address="Helios.Services.TeleGPS", event_name="aprs") as aprs_events:
