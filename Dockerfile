@@ -30,19 +30,6 @@ RUN mkdir -p src/generated && \
 
 RUN uv sync --frozen
 
-# ---- Final image ----
-FROM python:3.13-slim
-
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=python-builder /app /app
-WORKDIR /app
-
 ENV PATH="/app/.venv/bin:$PATH"
 
 COPY entrypoint.sh /entrypoint.sh
