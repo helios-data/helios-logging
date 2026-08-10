@@ -79,7 +79,9 @@ async def main() -> None:
     # )
 
     telemetry_aggregator = Aggregator(store_func=telemetry_store)
+    telemetry_aggregator.start()
     # aprs_aggregator = Aggregator(store_func=aprs_store)
+    # aprs_aggregator.start()
 
     if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 
@@ -89,6 +91,9 @@ async def main() -> None:
                 process_telemetry(telemetry_events, telemetry_aggregator),
                 # process_aprs(aprs_events, aprs_aggregator),
             )
+
+    telemetry_aggregator.stop()
+    # aprs_aggregator.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())
