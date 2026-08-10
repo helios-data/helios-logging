@@ -45,8 +45,8 @@ async def main() -> None:
     telemetry_aggregator.start()
     aprs_aggregator.start()
 
-    async with helios_client.subscribe_event(address="Helios.FALCON.SRAD_Telemetry", event_name="telemetry") as telemetry_events:
-        async with helios_client.subscribe_event(address="Helios.Services.APRS_Telemetry", event_name="aprs") as aprs_events:
+    async with helios_client.subscribe_event(address="*", event_name="telemetry") as telemetry_events:
+        async with helios_client.subscribe_event(address="*", event_name="aprs") as aprs_events:
             await asyncio.gather(
                 process_telemetry(telemetry_events, telemetry_aggregator),
                 process_aprs(aprs_events, aprs_aggregator),
