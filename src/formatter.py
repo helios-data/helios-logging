@@ -3,8 +3,8 @@ from src.generated import FlightState, TelemetryPacket
 from helios.generated.helios.transport import AprsPacket
 
 # Temp protos
-from src.generated_temp.helios.transport import NmeaSentence
-from src.generated_temp import LandingPrediction
+from src.generated_temp.helios.transport import NmeaPosition, NmeaSentence
+from src.generated_temp import LandingPoint, LandingPrediction
 
 def flight_state_name(state: FlightState) -> str:
     state_names = {
@@ -78,9 +78,9 @@ def format_nmea_sentence(data: NmeaSentence) -> dict:
         "time": datetime.now(timezone.utc).timestamp(),
         "talker_id": data.talker_id,
         "sentence_type": data.sentence_type,
-        "timestamp": data.timestamp,
+        "timestamp": str(data.timestamp),
         "checksum_valid": data.checksum_valid,
-        "position": data.position,
+        "position": _format_nmea_position(data.position) if data.position else None,
         "raw_sentence": data.raw_sentence,
     }
 
@@ -89,21 +89,40 @@ def format_nmea_sentence(data: NmeaSentence) -> dict:
 def format_landing_prediction(data: LandingPrediction) -> dict:
     formatted_packet = {
         "time": datetime.now(timezone.utc).timestamp(),
-        "based_on_packet_counter" : data.based_on_packet_counter,
-        "computed_at_ms" : data.computed_at_ms,
-        "final" : data.final,
-        "best_estimate" : data.best_estimate,
-        "dispersion_cloud" : data.dispersion_cloud,
-        "ellipse_50" : data.ellipse_50,
-        "ellipse_90" : data.ellipse_90,
-        "current_lat" : data.current_lat,
-        "current_lon" : data.current_lon,
-        "current_source" : data.current_source,
-        "wind_source" : data.wind_source,
-        "descent_model" : data.descent_model,
-        "current_alt_agl" : data.current_alt_agl,
-        "flight_state" : data.flight_state,
-        "status" : data.status,
+        "based_on_packet_counter": data.based_on_packet_counter,
+        "computed_at_ms": data.computed_at_ms,
+        "final": data.final,
+        "best_estimate": _format_landing_point(data.best_estimate) if data.best_estimate else None,
+        "dispersion_cloud": [_format_landing_point(point) for point in data.dispersion_cloud],
+        "ellipse_50": [_format_landing_point(point) for point in data.ellipse_50],
+        "ellipse_90": [_format_landing_point(point) for point in data.ellipse_90],
+        "current_lat": data.current_lat,
+        "current_lon": data.current_lon,
+        "current_source": data.current_source,
+        "wind_source": data.wind_source,
+        "descent_model": data.descent_model,
+        "current_alt_agl": data.current_alt_agl,
+        "flight_state": data.flight_state,
+        "status": data.status,
     }
 
     return formatted_packet
+
+def _format_landing_point(point: LandingPoint) -> dict:
+    return {
+        "lat": point.lat,
+        "lon": point.lon,
+    }
+
+def _format_nmea_position(pos: NmeaPosition) -> dict:
+    return {
+        "latitude": pos.latitude,
+        "longitude": pos.longitude,
+        "altitude_m": pos.altitude_m,
+        "speed_knots": pos.speed_knots,
+        "course_deg": pos.course_deg,
+        "fix_quality": pos.fix_quality,
+        "geoid_separation_m": pos.geoid_separation_m,
+        "hdop": pos.hdop,
+        "satellites_used": pos.satellites_used,
+    }
