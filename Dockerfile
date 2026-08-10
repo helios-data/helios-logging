@@ -31,7 +31,7 @@ RUN mkdir -p src/generated && \
 
 # =========================================
 # TEMP STEP: GENERATE TEMP PROTOS
-RUN mkdir -p src/generated-temp && \
+RUN mkdir -p src/generated_temp && \
     uv run protoc \
     -I=temp-protos \
     --python_betterproto2_out=src/generated_temp \
