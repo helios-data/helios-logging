@@ -1,0 +1,25 @@
+[project]
+name = "logging"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "betterproto2>=0.10.0",
+    "betterproto2-compiler>=0.10.1",
+    "boto3>=1.43.36",
+    "helios-python-sdk",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.20",
+]
+
+[tool.uv.workspace]
+members = [
+    "helios-python-sdk",
+]
+
+[tool.uv.sources]
+helios-python-sdk = { workspace = true, editable = true }
