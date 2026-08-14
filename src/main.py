@@ -35,15 +35,15 @@ async def main() -> None:
     S3_REGION = os.environ.get("AWS_REGION", "us-east-1")
     S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 
-    telemetry_store = make_s3_store(type_name="telemetry", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    aprs_store = make_s3_store(type_name="aprs", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    nmea_store = make_s3_store(type_name="nmea", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    landing_prediction_store = make_s3_store(type_name="landing_prediction", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    telemetry_store = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    aprs_store = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    nmea_store = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    landing_prediction_store = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
 
-    telemetry_aggregator = Aggregator(store_func=telemetry_store)
-    aprs_aggregator = Aggregator(store_func=aprs_store)
-    nmea_aggregator = Aggregator(store_func=nmea_store)
-    landing_prediction_aggregator = Aggregator(store_func=landing_prediction_store)
+    telemetry_aggregator = Aggregator(store_func=telemetry_store, type_name="telemetry", key_prefix=S3_KEY_PREFIX)
+    aprs_aggregator = Aggregator(store_func=aprs_store, type_name="aprs", key_prefix=S3_KEY_PREFIX)
+    nmea_aggregator = Aggregator(store_func=nmea_store, type_name="nmea", key_prefix=S3_KEY_PREFIX)
+    landing_prediction_aggregator = Aggregator(store_func=landing_prediction_store, type_name="landing_prediction", key_prefix=S3_KEY_PREFIX)
 
     if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 

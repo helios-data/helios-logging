@@ -15,7 +15,9 @@ VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 class Aggregator:
     def __init__(
         self,
-        store_func: Callable[[List[dict]], None],
+        store_func: Callable[[str, List[dict]], None],
+        type_name: str,
+        key_prefix: str = "",
         store_interval_ms: int = DEFAULT_STORE_INTERVAL_MS,
         store_interval_max_size: int = DEFAULT_STORE_INTERVAL_MAX_SIZE,
     ):
@@ -30,7 +32,13 @@ class Aggregator:
         """
         self.store_interval_ms = store_interval_ms
         self.store_interval_max_size = store_interval_max_size
-        self._store_func = store_func or (lambda batch: None)
+        self._store_func = store_func or (lambda key, batch: None)
+
+        # Naming for generated object keys
+        self._type_name = type_name
+        self._key_prefix = key_prefix or ""
+        if self._key_prefix and not self._key_prefix.endswith("/"):
+            self._key_prefix = self._key_prefix + "/"
 
         self._lock = threading.Lock()
         self._condition = threading.Condition(self._lock)
@@ -149,7 +157,10 @@ class Aggregator:
             self._last_flush = time.monotonic()
 
         try:
-            self._store_func(batch)
+            # Generate an S3 object key and call the store function with it.
+            timestamp_ms = int(time.time() * 1000)
+            key = f"{self._key_prefix}{self._type_name}-{timestamp_ms}.jsonl"
+            self._store_func(key, batch)
 
             if VERBOSE:
                 logger.info(

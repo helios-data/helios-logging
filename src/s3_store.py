@@ -28,18 +28,18 @@ logger = logging.getLogger(__name__)
 VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 def make_s3_store(
-    type_name: str,
     bucket: Optional[str] = None,
-    key_prefix: str = "",
     region: Optional[str] = None,
     endpoint_url: Optional[str] = None,
-) -> Callable[[List[dict]], None]:
-    """Return a `store_func(batch: List[dict]) -> None` that writes to S3.
+) -> Callable[[str, List[dict]], None]:
+    """Return a `store_func(key: str, batch: List[dict]) -> None` that writes to S3.
+
+    The returned function accepts the full S3 object `key` and a batch of
+    dictionaries to write as JSONL. This moves filename/key generation out of
+    the S3 helper so callers (for example `Aggregator`) can decide naming.
 
     Args:
-        type_name: The type name for the S3 object key.
         bucket: S3 bucket name. If not provided, read from `S3_BUCKET` env var.
-        key_prefix: Optional key prefix to prepend (can include trailing '/').
         region: AWS region name. If not provided, read from `AWS_REGION` env var.
         endpoint_url: Optional S3 endpoint URL (useful for MinIO/tests).
 
@@ -49,22 +49,14 @@ def make_s3_store(
     bucket = bucket or os.environ.get("S3_BUCKET")
     if not bucket:
         raise ValueError("S3 bucket must be provided via `bucket` or S3_BUCKET env var")
-
     region = region or os.environ.get("AWS_REGION")
     endpoint_url = endpoint_url or os.environ.get("S3_ENDPOINT_URL")
 
     s3_client = boto3.client("s3", region_name=region, endpoint_url=endpoint_url)
 
-    # Normalize prefix
-    if key_prefix and not key_prefix.endswith("/"):
-        key_prefix = key_prefix + "/"
-
-    def _store(batch: List[dict]) -> None:
+    def _store(key: str, batch: List[dict]) -> None:
         if not batch:
             return
-
-        timestamp_ms = int(time.time() * 1000)
-        key = f"{key_prefix}{type_name}-{timestamp_ms}.jsonl"
 
         # Build JSONL content
         try:
