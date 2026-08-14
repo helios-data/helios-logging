@@ -2,7 +2,14 @@ import boto3
 import json
 import logging
 
-from typing import Callable, Iterable, List, Optional
+from typing import Callable, List, Optional
+from botocore.exceptions import (
+    ClientError,
+    EndpointConnectionError,
+    ConnectTimeoutError,
+    NoCredentialsError,
+    PartialCredentialsError,
+)
 from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
@@ -41,7 +48,19 @@ def make_s3_store(
         try:
             s3_client.put_object(Bucket=bucket, Key=key, Body=body.encode("utf-8"), ContentType="application/x-ndjson")
             if VERBOSE: logger.info("Wrote %d records to s3://%s/%s", len(batch), bucket, key)
-        except Exception as e:  # pragma: no cover - defensive
+        except ClientError as e:
+            err = e.response.get("Error", {})
+            code = err.get("Code", "")
+            message = err.get("Message", "")
+            if "Invalid" in code or "Invalid" in message or code in ("InvalidArgument", "InvalidRequest"):
+                logger.error("Invalid S3 key: %s", key)
+            else:
+                logger.exception("S3 ClientError writing to s3://%s/%s: %s", bucket, key, message)
+        except (EndpointConnectionError, ConnectTimeoutError) as e:
+            logger.error("S3 connection failed: %s", endpoint_url or e)
+        except (NoCredentialsError, PartialCredentialsError) as e:
+            logger.error("S3 credentials error: %s", e)
+        except Exception as e:
             logger.exception("Unexpected error writing to S3: %s", e)
 
     return _store
