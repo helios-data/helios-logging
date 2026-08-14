@@ -8,11 +8,10 @@ from helios import HeliosClient
 from src.aggregator import Aggregator
 from src.s3_store import make_s3_store
 from src.processor import process_telemetry, process_aprs, process_nmea, process_landing_prediction
+from src.config import S3_BUCKET, S3_ENDPOINT_URL, S3_KEY_PREFIX, S3_REGION, VERBOSE
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 async def main() -> None:
     if VERBOSE: logger.info("Starting logging task with verbose output.")
@@ -29,11 +28,6 @@ async def main() -> None:
     except Exception as e:
         logger.error(f"Fatal error in logging task: {e}", exc_info=True)
         sys.exit(1)
-
-    S3_BUCKET = os.environ.get("S3_BUCKET")
-    S3_KEY_PREFIX = os.environ.get("S3_KEY_PREFIX", "")
-    S3_REGION = os.environ.get("AWS_REGION", "us-east-1")
-    S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 
     s3_store_func = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
 

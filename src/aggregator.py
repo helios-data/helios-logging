@@ -1,20 +1,10 @@
-import os
 import threading
 import logging
 import time
 from typing import Callable, List, Optional, Tuple
-
-# Maximum number of failed uploads to keep for retry.
-DEFAULT_MAXIMUM_BUFFER_SIZE = 100
-# Default interval (in milliseconds) between automatic flushes.
-DEFAULT_STORE_INTERVAL_MS = 5000
-# Maximum number of items to flush in a single batch. If the buffer exceeds this size, it will flush immediately.
-DEFAULT_STORE_INTERVAL_MAX_SIZE = 1000
+from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_SIZE, DEFAULT_STORE_INTERVAL_MS, VERBOSE
 
 logger = logging.getLogger(__name__)
-
-VERBOSE: bool = os.getenv("VERBOSE", "") != ""
-
 
 class Aggregator:
     def __init__(

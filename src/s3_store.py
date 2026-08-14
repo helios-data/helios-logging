@@ -15,17 +15,15 @@ chain (environment variables, config files, instance profile, etc.).
 """
 from __future__ import annotations
 
+import boto3
 import json
 import logging
 import os
-import time
 from typing import Callable, Iterable, List, Optional
-
-import boto3
+from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
 
-VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 def make_s3_store(
     bucket: Optional[str] = None,
