@@ -175,7 +175,7 @@ class Aggregator:
                 self._store_func(key, retry_batch)
                 if VERBOSE: logger.info("[Flush] Successfully retried %d items to %s", len(retry_batch), key)
             except Exception:
-                logger.exception("Error storing queued batch %s", key)
+                logger.error("Error storing queued batch %s", key)
 
                 remaining = local_retry[idx:]
                 remaining.append((current_key, batch))
@@ -192,7 +192,7 @@ class Aggregator:
             if VERBOSE:
                 logger.info(f"[Flush] Stored batch of {len(batch)} items.")
         except Exception:
-            logger.exception("Error storing current batch %s", current_key)
+            logger.error("Error storing current batch %s", current_key)
             with self._lock:
                 self._enqueue_retry(current_key, batch)
             return
