@@ -44,8 +44,7 @@ class Aggregator:
         # Primary buffer of incoming dictionaries waiting to be flushed.
         self._buffer: List[dict] = []
 
-        # Retry buffer holds tuples of (key, batch) for failed uploads.
-        # Acts as a FIFO queue with a maximum size of MAXIMUM_BUFFER_SIZE.
+        # Retry FIFO buffer holds tuples of (key, batch) for failed uploads.
         self._retry_buffer: List[Tuple[str, List[dict]]] = []
 
         self._stop_event = threading.Event()
@@ -170,10 +169,11 @@ class Aggregator:
             local_retry = list(self._retry_buffer)
             self._retry_buffer.clear()
 
-        # Upload retry items one-by-one; on first failure requeue remaining + current batch.
         for idx, (key, retry_batch) in enumerate(local_retry):
             try:
+                logger.info("Retrying upload of %d items to %s", len(retry_batch), key)
                 self._store_func(key, retry_batch)
+                if VERBOSE: logger.info("[Flush] Successfully retried %d items to %s", len(retry_batch), key)
             except Exception:
                 logger.exception("Error storing queued batch %s", key)
 

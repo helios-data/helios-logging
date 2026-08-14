@@ -41,9 +41,9 @@ def make_s3_store(
         try:
             lines = [json.dumps(item, ensure_ascii=False) for item in batch]
             body = "\n".join(lines) + "\n"
-        except Exception as e:  # pragma: no cover - defensive
+        except Exception as e:
             logger.exception("Failed to serialize batch for S3: %s", e)
-            return
+            raise
 
         try:
             s3_client.put_object(Bucket=bucket, Key=key, Body=body.encode("utf-8"), ContentType="application/x-ndjson")
@@ -56,11 +56,15 @@ def make_s3_store(
                 logger.error("Invalid S3 key: %s", key)
             else:
                 logger.exception("S3 ClientError writing to s3://%s/%s: %s", bucket, key, message)
+            raise
         except (EndpointConnectionError, ConnectTimeoutError) as e:
             logger.error("S3 connection failed: %s", endpoint_url or e)
+            raise
         except (NoCredentialsError, PartialCredentialsError) as e:
             logger.error("S3 credentials error: %s", e)
+            raise
         except Exception as e:
             logger.exception("Unexpected error writing to S3: %s", e)
+            raise
 
     return _store
