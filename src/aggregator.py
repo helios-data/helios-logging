@@ -167,6 +167,7 @@ class Aggregator:
         # re-queue the remaining items plus the current batch.
         with self._lock:
             local_retry = list(self._retry_buffer)
+            if local_retry and VERBOSE: logger.info("Attempting to retry %d queued items.", len(local_retry))
             self._retry_buffer.clear()
 
         for idx, (key, retry_batch) in enumerate(local_retry):
