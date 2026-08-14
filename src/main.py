@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import sys
 
 from contextlib import AsyncExitStack
@@ -8,11 +7,10 @@ from helios import HeliosClient
 from src.aggregator import Aggregator
 from src.s3_store import make_s3_store
 from src.processor import process_telemetry, process_aprs, process_nmea, process_landing_prediction
+from src.config import S3_BUCKET, S3_ENDPOINT_URL, S3_KEY_PREFIX, S3_REGION, VERBOSE
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 async def main() -> None:
     if VERBOSE: logger.info("Starting logging task with verbose output.")
@@ -30,20 +28,12 @@ async def main() -> None:
         logger.error(f"Fatal error in logging task: {e}", exc_info=True)
         sys.exit(1)
 
-    S3_BUCKET = os.environ.get("S3_BUCKET")
-    S3_KEY_PREFIX = os.environ.get("S3_KEY_PREFIX", "")
-    S3_REGION = os.environ.get("AWS_REGION", "us-east-1")
-    S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
+    s3_store_func = make_s3_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
 
-    telemetry_store = make_s3_store(type_name="telemetry", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    aprs_store = make_s3_store(type_name="aprs", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    nmea_store = make_s3_store(type_name="nmea", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-    landing_prediction_store = make_s3_store(type_name="landing_prediction", bucket=S3_BUCKET, key_prefix=S3_KEY_PREFIX, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
-
-    telemetry_aggregator = Aggregator(store_func=telemetry_store)
-    aprs_aggregator = Aggregator(store_func=aprs_store)
-    nmea_aggregator = Aggregator(store_func=nmea_store)
-    landing_prediction_aggregator = Aggregator(store_func=landing_prediction_store)
+    telemetry_aggregator = Aggregator(store_func=s3_store_func, type_name="telemetry", key_prefix=S3_KEY_PREFIX)
+    aprs_aggregator = Aggregator(store_func=s3_store_func, type_name="aprs", key_prefix=S3_KEY_PREFIX)
+    nmea_aggregator = Aggregator(store_func=s3_store_func, type_name="nmea", key_prefix=S3_KEY_PREFIX)
+    landing_prediction_aggregator = Aggregator(store_func=s3_store_func, type_name="landing_prediction", key_prefix=S3_KEY_PREFIX)
 
     if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 

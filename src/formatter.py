@@ -6,6 +6,7 @@ from helios.generated.helios.transport import AprsPacket, AprsPosition
 from src.generated_temp.helios.transport import NmeaPosition, NmeaSentence
 from src.generated_temp import LandingPoint, LandingPrediction
 
+
 def flight_state_name(state: FlightState) -> str:
     state_names = {
         FlightState.STANDBY: "STANDBY",

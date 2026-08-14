@@ -1,21 +1,20 @@
-import os
 import threading
 import logging
 import time
-from typing import Callable, List, Optional
 
-DEFAULT_STORE_INTERVAL_MS = 5000
-DEFAULT_STORE_INTERVAL_MAX_SIZE = 1000
+from typing import Callable, List, Optional, Tuple
+from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_SIZE, DEFAULT_STORE_INTERVAL_MS, VERBOSE
 
 logger = logging.getLogger(__name__)
-
-VERBOSE: bool = os.getenv("VERBOSE", "") != ""
 
 
 class Aggregator:
     def __init__(
         self,
-        store_func: Callable[[List[dict]], None],
+        store_func: Callable[[str, List[dict]], None],
+        type_name: str,
+        key_prefix: str = "",
+        maximum_buffer_size: int = DEFAULT_MAXIMUM_BUFFER_SIZE,
         store_interval_ms: int = DEFAULT_STORE_INTERVAL_MS,
         store_interval_max_size: int = DEFAULT_STORE_INTERVAL_MAX_SIZE,
     ):
@@ -28,14 +27,25 @@ class Aggregator:
         If the timer expires while the buffer is empty, no store occurs,
         but the timer continues from that point.
         """
+        self.maximum_buffer_size = maximum_buffer_size
         self.store_interval_ms = store_interval_ms
         self.store_interval_max_size = store_interval_max_size
-        self._store_func = store_func or (lambda batch: None)
+        self._store_func = store_func or (lambda key, batch: None)
+
+        # Naming for generated object keys
+        self._type_name = type_name
+        self._key_prefix = key_prefix or ""
+        if self._key_prefix and not self._key_prefix.endswith("/"):
+            self._key_prefix = self._key_prefix + "/"
 
         self._lock = threading.Lock()
         self._condition = threading.Condition(self._lock)
 
+        # Primary buffer of incoming dictionaries waiting to be flushed.
         self._buffer: List[dict] = []
+
+        # Retry FIFO buffer holds tuples of (key, batch) for failed uploads.
+        self._retry_buffer: List[Tuple[str, List[dict]]] = []
 
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
@@ -148,15 +158,53 @@ class Aggregator:
             # The flush happened from the aggregator's perspective here.
             self._last_flush = time.monotonic()
 
+        # Prepare key for the current batch
+        timestamp_ms = int(time.time() * 1000)
+        current_key = f"{self._key_prefix}{self._type_name}-{timestamp_ms}.jsonl"
+
+        # First, try to upload any queued failed items (oldest first).
+        # Make a local copy and clear the retry buffer; if any upload fails,
+        # re-queue the remaining items plus the current batch.
+        with self._lock:
+            local_retry = list(self._retry_buffer)
+            if local_retry and VERBOSE: logger.info("Attempting to retry %d queued items.", len(local_retry))
+            self._retry_buffer.clear()
+
+        for idx, (key, retry_batch) in enumerate(local_retry):
+            try:
+                logger.info("Retrying upload of %d items to %s", len(retry_batch), key)
+                self._store_func(key, retry_batch)
+                if VERBOSE: logger.info("[Flush] Successfully retried %d items to %s", len(retry_batch), key)
+            except Exception:
+                logger.error("Error storing queued batch %s", key)
+
+                remaining = local_retry[idx:]
+                remaining.append((current_key, batch))
+
+                with self._lock:
+                    for k, b in remaining:
+                        self._enqueue_retry(k, b)
+
+                return
+
+        # All retry items succeeded; upload the current batch.
         try:
-            self._store_func(batch)
-
+            self._store_func(current_key, batch)
             if VERBOSE:
-                logger.info(
-                    f"[Flush] Stored batch of {len(batch)} items."
-                )
-
+                logger.info(f"[Flush] Stored batch of {len(batch)} items.")
         except Exception:
-            logger.exception(
-                "Error storing batch of telemetry data"
-            )
+            logger.error("Error storing current batch %s", current_key)
+            with self._lock:
+                self._enqueue_retry(current_key, batch)
+            return
+
+    def _enqueue_retry(self, key: str, batch: List[dict]) -> None:
+        """Append (key, batch) to the retry buffer, dropping oldest if full.
+
+        Caller must hold `self._lock`.
+        """
+        # Drop oldest items if we're at capacity before appending.
+        while len(self._retry_buffer) >= self.maximum_buffer_size:
+            self._retry_buffer.pop(0)
+
+        self._retry_buffer.append((key, batch))
