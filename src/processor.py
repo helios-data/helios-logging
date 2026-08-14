@@ -11,6 +11,7 @@ from src.generated_temp import LandingPrediction
 
 logger = logging.getLogger(__name__)
 
+
 async def process_telemetry(events, aggregator: Aggregator) -> None:
     async for event in events:
         if not event.data or len(event.data) < 15: continue

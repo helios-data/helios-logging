@@ -1,10 +1,12 @@
 import threading
 import logging
 import time
+
 from typing import Callable, List, Optional, Tuple
 from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_SIZE, DEFAULT_STORE_INTERVAL_MS, VERBOSE
 
 logger = logging.getLogger(__name__)
+
 
 class Aggregator:
     def __init__(

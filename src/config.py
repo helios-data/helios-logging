@@ -1,10 +1,12 @@
+import logging
 import os
 
 # === GLOBAL
 VERBOSE: bool = os.getenv("VERBOSE", "") != ""
+logging.basicConfig(level=logging.INFO)
 
 # === S3 CREDENTIALS
-S3_BUCKET = os.environ.get("S3_BUCKET")
+S3_BUCKET = os.environ.get("S3_BUCKET", "")
 S3_KEY_PREFIX = os.environ.get("S3_KEY_PREFIX", "")
 S3_REGION = os.environ.get("AWS_REGION", "us-east-1")
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")

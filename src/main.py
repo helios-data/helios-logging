@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import sys
 
 from contextlib import AsyncExitStack
@@ -10,8 +9,8 @@ from src.s3_store import make_s3_store
 from src.processor import process_telemetry, process_aprs, process_nmea, process_landing_prediction
 from src.config import S3_BUCKET, S3_ENDPOINT_URL, S3_KEY_PREFIX, S3_REGION, VERBOSE
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 async def main() -> None:
     if VERBOSE: logger.info("Starting logging task with verbose output.")
