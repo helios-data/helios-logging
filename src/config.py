@@ -11,8 +11,8 @@ S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL")
 
 # === AGGREGATOR
 # Maximum number of failed uploads to keep for retry.
-DEFAULT_MAXIMUM_BUFFER_SIZE = os.environ.get("MAXIMUM_BUFFER_SIZE", 100)
+DEFAULT_MAXIMUM_BUFFER_SIZE = int(os.environ.get("MAXIMUM_BUFFER_SIZE", 100))
 # Default interval (in milliseconds) between automatic flushes.
-DEFAULT_STORE_INTERVAL_MS = os.environ.get("STORE_INTERVAL_MS", 5000)
+DEFAULT_STORE_INTERVAL_MS = int(os.environ.get("STORE_INTERVAL_MS", 5000))
 # Maximum number of items to flush in a single batch. If the buffer exceeds this size, it will flush immediately.
-DEFAULT_STORE_INTERVAL_MAX_SIZE = os.environ.get("STORE_INTERVAL_MAX_SIZE", 1000)
+DEFAULT_STORE_INTERVAL_MAX_SIZE = int(os.environ.get("STORE_INTERVAL_MAX_SIZE", 1000))
