@@ -2,7 +2,10 @@ import os
 import threading
 import logging
 import time
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Tuple
+
+# Maximum number of failed uploads to keep for retry.
+MAXIMUM_BUFFER_SIZE = 100
 
 DEFAULT_STORE_INTERVAL_MS = 5000
 DEFAULT_STORE_INTERVAL_MAX_SIZE = 1000
@@ -43,7 +46,12 @@ class Aggregator:
         self._lock = threading.Lock()
         self._condition = threading.Condition(self._lock)
 
+        # Primary buffer of incoming dictionaries waiting to be flushed.
         self._buffer: List[dict] = []
+
+        # Retry buffer holds tuples of (key, batch) for failed uploads.
+        # Acts as a FIFO queue with a maximum size of MAXIMUM_BUFFER_SIZE.
+        self._retry_buffer: List[Tuple[str, List[dict]]] = []
 
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
@@ -156,18 +164,51 @@ class Aggregator:
             # The flush happened from the aggregator's perspective here.
             self._last_flush = time.monotonic()
 
+        # Prepare key for the current batch
+        timestamp_ms = int(time.time() * 1000)
+        current_key = f"{self._key_prefix}{self._type_name}-{timestamp_ms}.jsonl"
+
+        # First, try to upload any queued failed items (oldest first).
+        # Make a local copy and clear the retry buffer; if any upload fails,
+        # re-queue the remaining items plus the current batch.
+        with self._lock:
+            local_retry = list(self._retry_buffer)
+            self._retry_buffer.clear()
+
+        # Upload retry items one-by-one; on first failure requeue remaining + current batch.
+        for idx, (key, retry_batch) in enumerate(local_retry):
+            try:
+                self._store_func(key, retry_batch)
+            except Exception:
+                logger.exception("Error storing queued batch %s", key)
+
+                remaining = local_retry[idx:]
+                remaining.append((current_key, batch))
+
+                with self._lock:
+                    for k, b in remaining:
+                        self._enqueue_retry(k, b)
+
+                return
+
+        # All retry items succeeded; upload the current batch.
         try:
-            # Generate an S3 object key and call the store function with it.
-            timestamp_ms = int(time.time() * 1000)
-            key = f"{self._key_prefix}{self._type_name}-{timestamp_ms}.jsonl"
-            self._store_func(key, batch)
-
+            self._store_func(current_key, batch)
             if VERBOSE:
-                logger.info(
-                    f"[Flush] Stored batch of {len(batch)} items."
-                )
-
+                logger.info(f"[Flush] Stored batch of {len(batch)} items.")
         except Exception:
-            logger.exception(
-                "Error storing batch of telemetry data"
-            )
+            logger.exception("Error storing current batch %s", current_key)
+            with self._lock:
+                self._enqueue_retry(current_key, batch)
+            return
+
+    def _enqueue_retry(self, key: str, batch: List[dict]) -> None:
+        """Append (key, batch) to the retry buffer, dropping oldest if full.
+
+        Caller must hold `self._lock`.
+        """
+        # Drop oldest items if we're at capacity before appending.
+        while len(self._retry_buffer) >= MAXIMUM_BUFFER_SIZE:
+            self._retry_buffer.pop(0)
+
+        self._retry_buffer.append((key, batch))
