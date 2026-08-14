@@ -5,9 +5,10 @@ import time
 from typing import Callable, List, Optional, Tuple
 
 # Maximum number of failed uploads to keep for retry.
-MAXIMUM_BUFFER_SIZE = 100
-
+DEFAULT_MAXIMUM_BUFFER_SIZE = 100
+# Default interval (in milliseconds) between automatic flushes.
 DEFAULT_STORE_INTERVAL_MS = 5000
+# Maximum number of items to flush in a single batch. If the buffer exceeds this size, it will flush immediately.
 DEFAULT_STORE_INTERVAL_MAX_SIZE = 1000
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ class Aggregator:
         store_func: Callable[[str, List[dict]], None],
         type_name: str,
         key_prefix: str = "",
+        maximum_buffer_size: int = DEFAULT_MAXIMUM_BUFFER_SIZE,
         store_interval_ms: int = DEFAULT_STORE_INTERVAL_MS,
         store_interval_max_size: int = DEFAULT_STORE_INTERVAL_MAX_SIZE,
     ):
@@ -33,6 +35,7 @@ class Aggregator:
         If the timer expires while the buffer is empty, no store occurs,
         but the timer continues from that point.
         """
+        self.maximum_buffer_size = maximum_buffer_size
         self.store_interval_ms = store_interval_ms
         self.store_interval_max_size = store_interval_max_size
         self._store_func = store_func or (lambda key, batch: None)
@@ -208,7 +211,7 @@ class Aggregator:
         Caller must hold `self._lock`.
         """
         # Drop oldest items if we're at capacity before appending.
-        while len(self._retry_buffer) >= MAXIMUM_BUFFER_SIZE:
+        while len(self._retry_buffer) >= self.maximum_buffer_size:
             self._retry_buffer.pop(0)
 
         self._retry_buffer.append((key, batch))
