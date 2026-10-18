@@ -19,8 +19,8 @@ def make_s3_store(
     bucket: str,
     region: str,
     endpoint_url: Optional[str] = None,
-) -> Callable[[str, List[dict]], None]:
-    """Return a `store_func(key: str, batch: List[dict]) -> None` that writes to S3.
+) -> Callable[[str, List[str]], None]:
+    """Return a `store_func(key: str, batch: List[str]) -> None` that writes to S3.
 
     Args:
         bucket: S3 bucket name.
@@ -33,14 +33,13 @@ def make_s3_store(
 
     s3_client = boto3.client("s3", region_name=region, endpoint_url=endpoint_url)
 
-    def _store(key: str, batch: List[dict]) -> None:
+    def _store(key: str, batch: List[str]) -> None:
         if not batch:
             return
 
         # Build JSONL content
         try:
-            lines = [json.dumps(item, ensure_ascii=False) for item in batch]
-            body = "\n".join(lines) + "\n"
+            body = "\n".join(batch) + "\n"
         except Exception as e:
             logger.error("Failed to serialize batch for S3: %s", e)
             raise

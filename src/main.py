@@ -2,11 +2,18 @@ import asyncio
 import logging
 import sys
 
+from src.generated import TelemetryPacket
+from helios.generated.helios.transport import AprsPacket
+
+# Temp protos
+from src.generated_temp.helios.transport import NmeaSentence
+from src.generated_temp import LandingPrediction
+
 from contextlib import AsyncExitStack
 from helios import HeliosClient
 from src.aggregator import Aggregator
 from src.s3_store import make_s3_store
-from src.processor import process_telemetry, process_aprs, process_nmea, process_landing_prediction
+from src.processor import process_events_str
 from src.config import S3_BUCKET, S3_ENDPOINT_URL, S3_KEY_PREFIX, S3_REGION, VERBOSE
 
 logger = logging.getLogger(__name__)
@@ -49,10 +56,10 @@ async def main() -> None:
         landing_prediction_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="landing_prediction"))
 
         await asyncio.gather(
-            process_telemetry(telemetry_events, telemetry_aggregator),
-            process_aprs(aprs_events, aprs_aggregator),
-            process_nmea(nmea_events, nmea_aggregator),
-            process_landing_prediction(landing_prediction_events, landing_prediction_aggregator),
+            process_events_str(telemetry_events, telemetry_aggregator, TelemetryPacket),
+            process_events_str(aprs_events, aprs_aggregator, AprsPacket),
+            process_events_str(nmea_events, nmea_aggregator, NmeaSentence),
+            process_events_str(landing_prediction_events, landing_prediction_aggregator, LandingPrediction),
         )   
 
     telemetry_aggregator.stop()
