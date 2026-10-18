@@ -8,10 +8,10 @@ from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_S
 logger = logging.getLogger(__name__)
 
 
-class Aggregator:
+class StringAggregator:
     def __init__(
         self,
-        store_func: Callable[[str, List[dict]], None],
+        store_func: Callable[[str, List[str]], None],
         type_name: str,
         key_prefix: str = "",
         maximum_buffer_size: int = DEFAULT_MAXIMUM_BUFFER_SIZE,
@@ -41,11 +41,11 @@ class Aggregator:
         self._lock = threading.Lock()
         self._condition = threading.Condition(self._lock)
 
-        # Primary buffer of incoming dictionaries waiting to be flushed.
-        self._buffer: List[dict] = []
+        # Primary buffer of incoming strings waiting to be flushed.
+        self._buffer: List[str] = []
 
         # Retry FIFO buffer holds tuples of (key, batch) for failed uploads.
-        self._retry_buffer: List[Tuple[str, List[dict]]] = []
+        self._retry_buffer: List[Tuple[str, List[str]]] = []
 
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
@@ -88,8 +88,8 @@ class Aggregator:
         if flush:
             self._flush()
 
-    def store_dictionary(self, data: dict) -> None:
-        """Add a dictionary to the buffer.
+    def store_str(self, data: str) -> None:
+        """Add a string to the buffer.
 
         If the buffer reaches the maximum size, flush immediately.
         """
@@ -198,7 +198,7 @@ class Aggregator:
                 self._enqueue_retry(current_key, batch)
             return
 
-    def _enqueue_retry(self, key: str, batch: List[dict]) -> None:
+    def _enqueue_retry(self, key: str, batch: List[str]) -> None:
         """Append (key, batch) to the retry buffer, dropping oldest if full.
 
         Caller must hold `self._lock`.
