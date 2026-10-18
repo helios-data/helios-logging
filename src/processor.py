@@ -2,9 +2,10 @@ from src.aggregator import Aggregator
 
 from typing import Any, Protocol
 from collections.abc import AsyncIterable
-from google.protobuf.json_format import MessageToJson
+from dataclasses import asdict
 from collections.abc import AsyncIterable
 
+import json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -26,7 +27,7 @@ async def process_events_str(
 
         try:
             packet = packet_type().parse(event.data)
-            packet_str = MessageToJson(packet)
+            packet_str = json.dumps(asdict(packet))
             aggregator.store_str(packet_str)
 
         except EOFError as e:
