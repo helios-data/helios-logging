@@ -15,7 +15,7 @@ from src.config import VERBOSE
 logger = logging.getLogger(__name__)
 
 
-def make_s3_store(
+def make_s3_string_store(
     bucket: str,
     region: str,
     endpoint_url: Optional[str] = None,

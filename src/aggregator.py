@@ -8,7 +8,7 @@ from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_S
 logger = logging.getLogger(__name__)
 
 
-class Aggregator:
+class StringAggregator:
     def __init__(
         self,
         store_func: Callable[[str, List[str]], None],

@@ -1,4 +1,4 @@
-from src.aggregator import Aggregator
+from src.aggregator import StringAggregator
 
 from typing import Any, Protocol
 from collections.abc import AsyncIterable
@@ -16,7 +16,7 @@ class Parsable(Protocol):
 
 async def process_events_str(
     events: AsyncIterable[Any],
-    aggregator: Aggregator,
+    aggregator: StringAggregator,
     packet_type: type[Parsable],
     *,
     min_data_length: int = 1,
