@@ -12,12 +12,6 @@ config = load_pydantic_config(Config)
 VERBOSE: bool = config.logging.verbose
 logging.basicConfig(level=logging.INFO)
 
-# === S3 CREDENTIALS
-S3_BUCKET = config.s3.s3_bucket
-S3_KEY_PREFIX = config.s3.s3_key_prefix
-S3_REGION = config.s3.region
-S3_ENDPOINT_URL = config.s3.s3_endpoint_url
-
 # === AGGREGATOR
 # Maximum number of failed uploads to keep for retry.
 DEFAULT_MAXIMUM_BUFFER_SIZE = int(os.environ.get("MAXIMUM_BUFFER_SIZE", 100))

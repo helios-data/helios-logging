@@ -1,5 +1,4 @@
 import boto3
-import json
 import logging
 
 from typing import Callable, List, Optional
@@ -14,10 +13,11 @@ from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
 
-
 def make_s3_string_store(
     bucket: str,
     region: str,
+    aws_access_key_id: str,
+    aws_secret_access_key: str,
     endpoint_url: Optional[str] = None,
 ) -> Callable[[str, List[str]], None]:
     """Return a `store_func(key: str, batch: List[str]) -> None` that writes to S3.
@@ -31,7 +31,13 @@ def make_s3_string_store(
         ValueError: if bucket cannot be determined.
     """
 
-    s3_client = boto3.client("s3", region_name=region, endpoint_url=endpoint_url)
+    s3_client = boto3.client(
+        "s3",
+        region_name=region,
+        aws_access_key_id=aws_access_key_id,
+        aws_secret_access_key=aws_secret_access_key,
+        endpoint_url=endpoint_url,
+    )
 
     def _store(key: str, batch: List[str]) -> None:
         if not batch:
