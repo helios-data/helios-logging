@@ -14,7 +14,7 @@ from helios import HeliosClient
 from src.aggregator import StringAggregator
 from src.s3_store import make_s3_string_store
 from src.processor import process_events_str
-from src.config import S3_BUCKET, S3_ENDPOINT_URL, S3_KEY_PREFIX, S3_REGION, VERBOSE
+from src.config import config, VERBOSE
 
 logger = logging.getLogger(__name__)
 
@@ -35,12 +35,18 @@ async def main() -> None:
         logger.error(f"Fatal error in logging task: {e}", exc_info=True)
         sys.exit(1)
 
-    s3_store_func = make_s3_string_store(bucket=S3_BUCKET, region=S3_REGION, endpoint_url=S3_ENDPOINT_URL)
+    s3_store_func = make_s3_string_store(
+        bucket=config.s3.s3_bucket, 
+        region=config.s3.region, 
+        aws_access_key_id=config.s3.access_key_id, 
+        aws_secret_access_key=config.s3.secret_access_key,
+        endpoint_url=config.s3.s3_endpoint_url,
+    )
 
-    telemetry_aggregator = StringAggregator(store_func=s3_store_func, type_name="telemetry", key_prefix=S3_KEY_PREFIX)
-    aprs_aggregator = StringAggregator(store_func=s3_store_func, type_name="aprs", key_prefix=S3_KEY_PREFIX)
-    nmea_aggregator = StringAggregator(store_func=s3_store_func, type_name="nmea", key_prefix=S3_KEY_PREFIX)
-    landing_prediction_aggregator = StringAggregator(store_func=s3_store_func, type_name="landing_prediction", key_prefix=S3_KEY_PREFIX)
+    telemetry_aggregator = StringAggregator(store_func=s3_store_func, type_name="telemetry", key_prefix="pydantic")
+    aprs_aggregator = StringAggregator(store_func=s3_store_func, type_name="aprs", key_prefix="pydantic")
+    nmea_aggregator = StringAggregator(store_func=s3_store_func, type_name="nmea", key_prefix="pydantic")
+    landing_prediction_aggregator = StringAggregator(store_func=s3_store_func, type_name="landing_prediction", key_prefix="pydantic")
 
     if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
 
