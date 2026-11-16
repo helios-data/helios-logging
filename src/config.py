@@ -1,5 +1,5 @@
-from config import Config
 from helios.config import load_pydantic_config
+from helios_pydantic_config import Config
 import logging
 import os
 
