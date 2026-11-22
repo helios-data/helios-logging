@@ -11,7 +11,6 @@ class S3(BaseModel):
 
 class AggregatorType(Enum):
     STRING = "string"
-    BYTE = "byte"
 
 class Aggregator(BaseModel):
     type: AggregatorType = AggregatorType.STRING
