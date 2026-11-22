@@ -2,12 +2,9 @@ import asyncio
 import logging
 import sys
 
-from src.generated import TelemetryPacket
-from helios.generated.helios.transport import AprsPacket
-
-# Temp protos
-from src.generated_temp.helios.transport import NmeaSentence
-from src.generated_temp import LandingPrediction
+from helios.generated.helios.cots import (
+    AprsPacket, TelemetryPacket, NmeaSentence, LandingPrediction
+)
 
 from contextlib import AsyncExitStack
 from helios import HeliosClient
