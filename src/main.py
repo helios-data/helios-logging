@@ -84,7 +84,7 @@ async def main() -> None:
                     )
                 )
                 if VERBOSE:
-                    logger.info("Subscribed to event_name=%r address=%r",sub.event_name,sub.event_address)
+                    logger.info("Subscribed to event_name=%r address=%r", sub.event_name.value, sub.event_address)
 
                 tasks.append(process_events_str(events, aggregator, packet_type))
 
