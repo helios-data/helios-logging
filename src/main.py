@@ -16,9 +16,8 @@ from src.helios_pydantic_config import SupportedEvent
 
 logger = logging.getLogger(__name__)
 
-# Maps a subscription's event_name to the packet type used to parse its events.
-# Add an entry here to make a new event name available to the config-driven
-# subscriptions in helios_pydantic_config.py.
+# Maps event type to the packet type
+# Add an entry to here and the config for new events
 PACKET_TYPES: dict[SupportedEvent, type] = {
     SupportedEvent.TELEMETRY: TelemetryPacket,
     SupportedEvent.APRS: AprsPacket,
@@ -55,8 +54,6 @@ async def main() -> None:
         endpoint_url=config.s3.s3_endpoint_url,
     )
 
-    # Build one aggregator per configured subscription, using that
-    # subscription's own aggregator settings.
     aggregators: list[StringAggregator] = []
     for sub in config.subscriptions:
         aggregator = StringAggregator(
