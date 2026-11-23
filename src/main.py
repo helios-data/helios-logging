@@ -12,7 +12,7 @@ from src.aggregator import StringAggregator
 from src.s3_store import make_s3_string_store
 from src.processor import process_events_str
 from src.config import config, VERBOSE
-from helios_pydantic_config import SupportedEvent
+from src.helios_pydantic_config import SupportedEvent
 
 logger = logging.getLogger(__name__)
 
