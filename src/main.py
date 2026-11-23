@@ -12,12 +12,27 @@ from src.aggregator import StringAggregator
 from src.s3_store import make_s3_string_store
 from src.processor import process_events_str
 from src.config import config, VERBOSE
+from helios_pydantic_config import SupportedEvent
 
 logger = logging.getLogger(__name__)
+
+# Maps a subscription's event_name to the packet type used to parse its events.
+# Add an entry here to make a new event name available to the config-driven
+# subscriptions in helios_pydantic_config.py.
+PACKET_TYPES: dict[SupportedEvent, type] = {
+    SupportedEvent.TELEMETRY: TelemetryPacket,
+    SupportedEvent.APRS: AprsPacket,
+    SupportedEvent.GROUND_POSITION: NmeaSentence,
+    SupportedEvent.LANDING_PREDICTION: LandingPrediction,
+}
 
 
 async def main() -> None:
     if VERBOSE: logger.info("Starting logging task with verbose output.")
+
+    if not config.subscriptions:
+        logger.info("No subscriptions configured. Exiting")
+        sys.exit(1)
 
     helios_client = HeliosClient(
         core_address="Helios",
@@ -40,35 +55,46 @@ async def main() -> None:
         endpoint_url=config.s3.s3_endpoint_url,
     )
 
-    telemetry_aggregator = StringAggregator(store_func=s3_store_func, type_name="telemetry", key_prefix="pydantic")
-    aprs_aggregator = StringAggregator(store_func=s3_store_func, type_name="aprs", key_prefix="pydantic")
-    nmea_aggregator = StringAggregator(store_func=s3_store_func, type_name="nmea", key_prefix="pydantic")
-    landing_prediction_aggregator = StringAggregator(store_func=s3_store_func, type_name="landing_prediction", key_prefix="pydantic")
+    # Build one aggregator per configured subscription, using that
+    # subscription's own aggregator settings.
+    aggregators: list[StringAggregator] = []
+    for sub in config.subscriptions:
+        aggregator = StringAggregator(
+            store_func=s3_store_func,
+            type_name=sub.event_name.value,
+            key_prefix=config.s3.s3_key_prefix,
+            maximum_buffer_size=sub.aggregator.max_buffer_size,
+            store_interval_ms=sub.aggregator.store_interval_ms,
+            store_interval_max_size=sub.aggregator.store_interval_max_size,
+        )
+        aggregators.append(aggregator)
 
-    if VERBOSE: logger.info("Starting telemetry subscription and processing loop.")
+    if VERBOSE:
+        logger.info("Starting %d configured subscriptions.", len(config.subscriptions))
 
-    telemetry_aggregator.start()
-    aprs_aggregator.start()
-    nmea_aggregator.start()
-    landing_prediction_aggregator.start()
+    for aggregator in aggregators:
+        aggregator.start()
 
-    async with AsyncExitStack() as stack:
-        telemetry_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="telemetry"))
-        aprs_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="aprs"))
-        nmea_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="ground_position"))
-        landing_prediction_events = await stack.enter_async_context(helios_client.subscribe_event(address="*", event_name="landing_prediction"))
+    try:
+        async with AsyncExitStack() as stack:
+            tasks = []
+            for sub, aggregator in zip(config.subscriptions, aggregators):
+                packet_type = PACKET_TYPES[sub.event_name]
+                events = await stack.enter_async_context(
+                    helios_client.subscribe_event(
+                        address=sub.event_address,
+                        event_name=sub.event_name.value,
+                    )
+                )
+                if VERBOSE:
+                    logger.info("Subscribed to event_name=%r address=%r",sub.event_name,sub.event_address)
 
-        await asyncio.gather(
-            process_events_str(telemetry_events, telemetry_aggregator, TelemetryPacket),
-            process_events_str(aprs_events, aprs_aggregator, AprsPacket),
-            process_events_str(nmea_events, nmea_aggregator, NmeaSentence),
-            process_events_str(landing_prediction_events, landing_prediction_aggregator, LandingPrediction),
-        )   
+                tasks.append(process_events_str(events, aggregator, packet_type))
 
-    telemetry_aggregator.stop()
-    aprs_aggregator.stop()
-    nmea_aggregator.stop()
-    landing_prediction_aggregator.stop()
+            await asyncio.gather(*tasks)
+    finally:
+        for aggregator in aggregators:
+            aggregator.stop()
 
 if __name__ == "__main__":
     asyncio.run(main())
