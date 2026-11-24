@@ -18,8 +18,14 @@ class Aggregator(BaseModel):
     store_interval_ms: int = 5000
     store_interval_max_size: int = 1000
 
+class SupportedEvent(Enum):
+    TELEMETRY = "telemetry"
+    APRS = "aprs"
+    GROUND_POSITION = "ground_position"
+    LANDING_PREDICTION = "landing_prediction"
+
 class Subscription(BaseModel):
-    event_name: str
+    event_name: SupportedEvent
     event_address: str = "*"
     aggregator: Aggregator = Field(default_factory=Aggregator)
 

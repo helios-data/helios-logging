@@ -3,7 +3,7 @@ import logging
 import time
 
 from typing import Callable, List, Optional, Tuple
-from src.config import DEFAULT_MAXIMUM_BUFFER_SIZE, DEFAULT_STORE_INTERVAL_MAX_SIZE, DEFAULT_STORE_INTERVAL_MS, VERBOSE
+from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +13,10 @@ class StringAggregator:
         self,
         store_func: Callable[[str, List[str]], None],
         type_name: str,
-        key_prefix: str = "",
-        maximum_buffer_size: int = DEFAULT_MAXIMUM_BUFFER_SIZE,
-        store_interval_ms: int = DEFAULT_STORE_INTERVAL_MS,
-        store_interval_max_size: int = DEFAULT_STORE_INTERVAL_MAX_SIZE,
+        key_prefix: str,
+        maximum_buffer_size: int,
+        store_interval_ms: int,
+        store_interval_max_size: int,
     ):
         """Thread-safe aggregator.
 
