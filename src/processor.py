@@ -1,12 +1,12 @@
-from src.aggregator import StringAggregator
+import json
+import logging
 
+from loguru import logger
 from typing import Any, Protocol
 from collections.abc import AsyncIterable
 from dataclasses import asdict
-from collections.abc import AsyncIterable
 
-import json
-import logging
+from src.aggregator import StringAggregator
 
 logger = logging.getLogger(__name__)
 

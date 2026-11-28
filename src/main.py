@@ -1,20 +1,18 @@
 import asyncio
-import logging
 import sys
 
+from loguru import logger
+from contextlib import AsyncExitStack
+
+from helios import HeliosClient
 from helios.generated.helios.cots import (
     AprsPacket, TelemetryPacket, NmeaSentence, LandingPrediction
 )
-
-from contextlib import AsyncExitStack
-from helios import HeliosClient
 from src.aggregator import StringAggregator
 from src.s3_store import make_s3_string_store
 from src.processor import process_events_str
 from src.config import config
 from src.helios_pydantic_config import SupportedEvent
-
-logger = logging.getLogger(__name__)
 
 # Maps event type to the packet type
 # Add an entry to here and the config for new events

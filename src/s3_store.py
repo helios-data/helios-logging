@@ -1,6 +1,6 @@
 import boto3
-import logging
 
+from loguru import logger
 from typing import Callable, List, Optional
 from botocore.exceptions import (
     ClientError,
@@ -9,8 +9,6 @@ from botocore.exceptions import (
     NoCredentialsError,
     PartialCredentialsError,
 )
-
-logger = logging.getLogger(__name__)
 
 def make_s3_string_store(
     bucket: str,

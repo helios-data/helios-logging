@@ -1,10 +1,8 @@
 import threading
-import logging
 import time
 
+from loguru import logger
 from typing import Callable, List, Optional, Tuple
-
-logger = logging.getLogger(__name__)
 
 
 class StringAggregator:
