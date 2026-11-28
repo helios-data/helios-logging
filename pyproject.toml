@@ -9,6 +9,7 @@ dependencies = [
     "betterproto2-compiler>=0.10.1",
     "boto3>=1.43.36",
     "helios-python-sdk",
+    "loguru>=0.8.0",
 ]
 
 [dependency-groups]

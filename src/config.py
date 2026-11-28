@@ -1,8 +1,18 @@
+import sys
+
+from loguru import logger
+
 from helios.config import load_pydantic_config
 from src.helios_pydantic_config import Config
-import logging
 
 config = load_pydantic_config(Config)
-VERBOSE: bool = config.logging.verbose
 
-logging.basicConfig(level=logging.INFO)
+logger.remove()
+
+logging_level = "DEBUG" if config.logging.verbose else "INFO"
+
+logger.add(
+    sys.stderr,
+    level=logging_level,
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{line} | {message}"
+)
