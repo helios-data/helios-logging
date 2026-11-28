@@ -3,7 +3,6 @@ import logging
 import time
 
 from typing import Callable, List, Optional, Tuple
-from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
 
@@ -145,8 +144,7 @@ class StringAggregator:
 
         with self._lock:
             if not self._buffer:
-                if VERBOSE:
-                    logger.info("[Flush] Buffer is empty; skipping store.")
+                logger.debug("[Flush] Buffer is empty; skipping store.")
 
                 # Reset timer even though there was nothing to store.
                 self._last_flush = time.monotonic()
@@ -167,14 +165,15 @@ class StringAggregator:
         # re-queue the remaining items plus the current batch.
         with self._lock:
             local_retry = list(self._retry_buffer)
-            if local_retry and VERBOSE: logger.info("Attempting to retry %d queued items.", len(local_retry))
+            if local_retry:
+                logger.debug("Attempting to retry %d queued items.", len(local_retry))
             self._retry_buffer.clear()
 
         for idx, (key, retry_batch) in enumerate(local_retry):
             try:
                 logger.info("Retrying upload of %d items to %s", len(retry_batch), key)
                 self._store_func(key, retry_batch)
-                if VERBOSE: logger.info("[Flush] Successfully retried %d items to %s", len(retry_batch), key)
+                logger.debug("[Flush] Successfully retried %d items to %s", len(retry_batch), key)
             except Exception:
                 logger.error("Error storing queued batch %s", key)
 
@@ -190,8 +189,7 @@ class StringAggregator:
         # All retry items succeeded; upload the current batch.
         try:
             self._store_func(current_key, batch)
-            if VERBOSE:
-                logger.info(f"[Flush] Stored batch of {len(batch)} items.")
+            logger.debug(f"[Flush] Stored batch of {len(batch)} items.")
         except Exception:
             logger.error("Error storing current batch %s", current_key)
             with self._lock:

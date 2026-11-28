@@ -3,6 +3,8 @@ from src.helios_pydantic_config import Config
 import logging
 
 config = load_pydantic_config(Config)
-VERBOSE: bool = config.logging.verbose
 
-logging.basicConfig(level=logging.INFO)
+if config.logging.verbose:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)

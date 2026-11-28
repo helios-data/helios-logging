@@ -11,7 +11,7 @@ from helios import HeliosClient
 from src.aggregator import StringAggregator
 from src.s3_store import make_s3_string_store
 from src.processor import process_events_str
-from src.config import config, VERBOSE
+from src.config import config
 from src.helios_pydantic_config import SupportedEvent
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ PACKET_TYPES: dict[SupportedEvent, type] = {
 
 
 async def main() -> None:
-    if VERBOSE: logger.info("Starting logging task with verbose output.")
+    logger.debug("Starting logging task with verbose output.")
 
     if not config.subscriptions:
         logger.info("No subscriptions configured. Exiting")
@@ -66,8 +66,7 @@ async def main() -> None:
         )
         aggregators.append(aggregator)
 
-    if VERBOSE:
-        logger.info("Starting %d configured subscriptions.", len(config.subscriptions))
+    logger.debug("Starting %d configured subscriptions.", len(config.subscriptions))
 
     for aggregator in aggregators:
         aggregator.start()
@@ -83,8 +82,8 @@ async def main() -> None:
                         event_name=sub.event_name.value,
                     )
                 )
-                if VERBOSE:
-                    logger.info("Subscribed to event_name=%r address=%r", sub.event_name.value, sub.event_address)
+
+                logger.debug("Subscribed to event_name=%r address=%r", sub.event_name.value, sub.event_address)
 
                 tasks.append(process_events_str(events, aggregator, packet_type))
 

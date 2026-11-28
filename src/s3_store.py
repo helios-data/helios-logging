@@ -9,7 +9,6 @@ from botocore.exceptions import (
     NoCredentialsError,
     PartialCredentialsError,
 )
-from src.config import VERBOSE
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +51,7 @@ def make_s3_string_store(
 
         try:
             s3_client.put_object(Bucket=bucket, Key=key, Body=body.encode("utf-8"), ContentType="application/x-ndjson")
-            if VERBOSE: logger.info("Wrote %d records to s3://%s/%s", len(batch), bucket, key)
+            logger.debug("Wrote %d records to s3://%s/%s", len(batch), bucket, key)
         except ClientError as e:
             err = e.response.get("Error", {})
             code = err.get("Code", "")
